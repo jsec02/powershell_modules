@@ -46,7 +46,7 @@ function Watch-Command {
             Write-Host $InfoBar
         }
 
-        # Out-Host in required here because without it, when the output is table-based,
+        # Out-Host is required here because without it, when the output is table-based,
         # subsequent iterations in the while loop chop off the header columns for some reason
         & $ScriptBlock | Out-Host
 
