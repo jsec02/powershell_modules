@@ -47,7 +47,7 @@ function Get-GroupedProcesses {
 
 function Get-SortedGroupedProcesses {
     param([string]$SortBy = 'WS(M)')
-    Get-GroupedProcesses | Sort-Object -Property $SortBy -Descending | Format-Table
+    Get-GroupedProcesses | Sort-Object -Property $SortBy -Descending
 }
 
 # ===================================== CIM ======================================
@@ -81,7 +81,7 @@ function Get-LocalDrive {
             'Free(G)' = $_.FreeSpace / 1GB
             'PercentFree' = ($_.FreeSpace / $_.Size) * 100
         }
-    } | Format-Table
+    }
 } 
 
 # ===================================== CPU ======================================
@@ -109,5 +109,5 @@ function Get-GPU {
             'DriverDate' = $_.DriverDate
             'DriverVersion' = $_.DriverVersion
         }
-    } | Format-List
+    }
 }
