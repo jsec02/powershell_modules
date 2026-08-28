@@ -24,7 +24,7 @@ function Update-Packages {
     [CmdletBinding()]
     param()
 
-    Get-WinGetPackage | Where-Object IsUpdateAvailable | Update-WinGetPackage -Mode Silent
+    Get-WinGetPackage | Where-Object -Property IsUpdateAvailable | Update-WinGetPackage -Mode Silent
 }
 
 # ===================================== GIT ======================================
