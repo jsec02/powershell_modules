@@ -4,10 +4,10 @@
 
 function Build-InfoBar {
     param(
-        [Parameter(Mandatory=$True)]
+        [Parameter(Mandatory=$true)]
         [scriptblock]$ScriptBlock,
 
-        [Parameter(Mandatory=$True)]
+        [Parameter(Mandatory=$true)]
         [double]$Interval
     )
 
@@ -31,7 +31,7 @@ function Build-InfoBar {
 
 function Watch-Command {
     param(
-        [Parameter(Mandatory=$True)]
+        [Parameter(Mandatory=$true)]
         [scriptblock]$ScriptBlock,
 
         [double]$Interval = 1
