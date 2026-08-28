@@ -30,6 +30,7 @@ function Build-InfoBar {
 }
 
 function Watch-Command {
+    [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
         [scriptblock]$ScriptBlock,
