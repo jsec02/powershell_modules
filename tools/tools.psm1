@@ -5,18 +5,25 @@
 # ===================================== HELP =====================================
 
 function Get-CommandParams {
+    [CmdletBinding()]
     param([string]$Command)
+
     Get-Help -Name $Command -Parameter *
 }
 
 function Get-CommandExamples {
+    [CmdletBinding()]
     param([string]$Command)
+
     Get-Help -Name $Command -Example
 }
 
 # ==================================== WINGET ====================================
 
 function Update-Packages {
+    [CmdletBinding()]
+    param()
+
     Get-WinGetPackage | Where-Object IsUpdateAvailable | Update-WinGetPackage -Mode Silent
 }
 
@@ -33,6 +40,9 @@ function Update-GitMaster {
 # ================================== PROCESSES ===================================
 
 function Get-GroupedProcesses {
+    [CmdletBinding()]
+    param()
+
     Get-Process | Group-Object -Property ProcessName | ForEach-Object {
         [PSCustomObject]@{
             'NPM(K)' = (($_.Group.NonpagedSystemMemorySize64 | Measure-Object -Sum).Sum / 1KB)
@@ -46,20 +56,27 @@ function Get-GroupedProcesses {
 }
 
 function Get-SortedGroupedProcesses {
+    [CmdletBinding()]
     param([string]$SortBy = 'WS(M)')
+
     Get-GroupedProcesses | Sort-Object -Property $SortBy -Descending
 }
 
 # ===================================== CIM ======================================
 
 function Get-CimChildNamespace {
+    [CmdletBinding()]
     param([string]$Namespace = 'root')
+
     Get-CimInstance -Namespace $Namespace -ClassName __NAMESPACE | Select-Object -Property Name
 }
 
 # =================================== DRIVERS ====================================
 
 function Get-Driver {
+    [CmdletBinding()]
+    param()
+
     Get-CimInstance -Namespace Root\CIMv2 -ClassName Win32_SystemDriver | ForEach-Object {
         [PSCustomObject]@{
             'ModuleName' = $_.Name
@@ -72,6 +89,9 @@ function Get-Driver {
 # ==================================== DRIVES ====================================
 
 function Get-LocalDrive {
+    [CmdletBinding()]
+    param()
+
     # DriveType of 3 signifies a local disk type
     Get-CimInstance -Namespace Root\CIMv2 -ClassName Win32_LogicalDisk | Where-Object {$_.DriveType -eq 3} | ForEach-Object {
         [PSCustomObject]@{
@@ -87,6 +107,9 @@ function Get-LocalDrive {
 # ===================================== CPU ======================================
 
 function Get-CPU {
+    [CmdletBinding()]
+    param()
+
     Get-CimInstance -Namespace Root\CIMv2 -ClassName Win32_Processor |  ForEach-Object {
         [PSCustomObject]@{
             'DeviceID' = $_.DeviceID
@@ -102,6 +125,9 @@ function Get-CPU {
 # ===================================== GPU ======================================
 
 function Get-GPU {
+    [CmdletBinding()]
+    param()
+
     Get-CimInstance -Namespace Root\CIMv2 -ClassName Win32_VideoController |  ForEach-Object {
         [PSCustomObject]@{
             'DeviceID' = $_.DeviceID
