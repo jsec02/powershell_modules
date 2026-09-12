@@ -26,5 +26,3 @@ function Get-MachineInfo {
         $Os | Select-Object -Property @{Name = 'ComputerName'; Expression = {$Computer}}, Version, ServicePackMajorVersion
     }
 }
-
-Get-MachineInfo -ComputerName WINDOWS
