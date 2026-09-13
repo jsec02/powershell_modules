@@ -147,3 +147,15 @@ function Enable-Firewall {
 function Disable-Firewall {
     Set-NetFirewallProfile -Profile Domain, Public, Private -Enabled False
 }
+
+function New-FirewallInboundPort {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][int]$Port)
+    New-NetFirewallRule -DisplayName "Allow inbound Port $Port" -Direction Inbound -LocalPort $Port -Protocol TCP -Action Allow
+}
+
+function Remove-FirewallInboundPort {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][int]$Port)
+    Remove-NetFirewallRule -DisplayName "Allow inbound Port $Port" -ErrorAction SilentlyContinue
+}
