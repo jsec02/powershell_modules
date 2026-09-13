@@ -137,3 +137,13 @@ function Get-GPU {
         }
     }
 }
+
+# =================================== FIREWALL ===================================
+
+function Enable-Firewall {
+    Set-NetFirewallProfile -Profile Domain, Public, Private -Enabled True
+}
+
+function Disable-Firewall {
+    Set-NetFirewallProfile -Profile Domain, Public, Private -Enabled False
+}
