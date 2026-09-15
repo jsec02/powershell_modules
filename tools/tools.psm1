@@ -93,7 +93,7 @@ function Get-LocalDrive {
     param()
 
     # DriveType of 3 signifies a local disk type
-    Get-CimInstance -Namespace Root\CIMv2 -Query 'SELECT * FROM Win32_LogicalDisk WHERE "DriveType" = 3' | ForEach-Object {
+    Get-CimInstance -Namespace Root\CIMv2 -Query 'SELECT * FROM Win32_LogicalDisk WHERE DriveType = 3' | ForEach-Object {
         [PSCustomObject]@{
             'DeviceID' = $_.DeviceID
             'VolumeName' = $_.VolumeName
