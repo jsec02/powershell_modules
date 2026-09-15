@@ -68,7 +68,7 @@ function Get-CimChildNamespace {
     [CmdletBinding()]
     param([string]$Namespace = 'root')
 
-    Get-CimInstance -Namespace $Namespace -ClassName __NAMESPACE | Select-Object -Property Name
+    Get-CimInstance -Namespace $Namespace -Query 'SELECT * FROM __NAMESPACE' | Select-Object -Property Name
 }
 
 # =================================== DRIVERS ====================================
@@ -77,7 +77,7 @@ function Get-Driver {
     [CmdletBinding()]
     param()
 
-    Get-CimInstance -Namespace Root\CIMv2 -ClassName Win32_SystemDriver | ForEach-Object {
+    Get-CimInstance -Namespace Root\CIMv2 -Query 'SELECT * FROM Win32_SystemDriver' | ForEach-Object {
         [PSCustomObject]@{
             'ModuleName' = $_.Name
             'DisplayName' = $_.DisplayName
@@ -93,7 +93,7 @@ function Get-LocalDrive {
     param()
 
     # DriveType of 3 signifies a local disk type
-    Get-CimInstance -Namespace Root\CIMv2 -ClassName Win32_LogicalDisk -Filter "DriveType=3" | ForEach-Object {
+    Get-CimInstance -Namespace Root\CIMv2 -Query 'SELECT * FROM Win32_LogicalDisk WHERE "DriveType" = 3' | ForEach-Object {
         [PSCustomObject]@{
             'DeviceID' = $_.DeviceID
             'VolumeName' = $_.VolumeName
@@ -110,7 +110,7 @@ function Get-CPU {
     [CmdletBinding()]
     param()
 
-    Get-CimInstance -Namespace Root\CIMv2 -ClassName Win32_Processor |  ForEach-Object {
+    Get-CimInstance -Namespace Root\CIMv2 -Query 'SELECT * FROM Win32_SystemProcessor' |  ForEach-Object {
         [PSCustomObject]@{
             'DeviceID' = $_.DeviceID
             'Name' = $_.Name
@@ -128,7 +128,7 @@ function Get-GPU {
     [CmdletBinding()]
     param()
 
-    Get-CimInstance -Namespace Root\CIMv2 -ClassName Win32_VideoController |  ForEach-Object {
+    Get-CimInstance -Namespace Root\CIMv2 -Query 'SELECT * FROM Win32_VideoController' |  ForEach-Object {
         [PSCustomObject]@{
             'DeviceID' = $_.DeviceID
             'Name' = $_.Name
