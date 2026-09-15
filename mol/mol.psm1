@@ -7,25 +7,27 @@
 function Get-MachineInfo {
     [CmdletBinding()]
     param(
-        [Parameter(ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true,
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $true)]
+        [Alias('CN', 'MachineName', 'Name')]
         [string[]]$ComputerName,
 
         [string]$LogFailuresToPath,
+
+        [ValidateSet('WSMAN', 'DCOM')]
         [string]$Protocol = 'WSMAN',
+
         [switch]$ProtocolFallback
     )
-    
+
     BEGIN {
     }
 
     PROCESS {
         foreach ($Computer in $ComputerName) {
             # Establish session protocol
-            if ($Protocol -eq 'DCOM') {
-                $Option = New-CimSessionOption -Protocol DCOM
-            } else {
-                $Option = New-CimSessionOption -Protocol WSMAN
-            }
+            $Option = New-CimSessionOption -Protocol $Protocol
 
             # Connect session
             $Session = New-CimSession -ComputerName $Computer -SessionOption $Option
@@ -47,43 +49,64 @@ function Get-MachineInfo {
 # ============================ SET-MASTERSERVICELOGON ============================
 
 function Set-MasterServiceLogon {
+    [CmdletBinding()]
     param(
+        [Parameter(Mandatory = $true,
+            ValueFromPipelineByPropertyName = $true)]
         [string]$ServiceName,
+
+        [Parameter(Mandatory = $true,
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $true)]
         [string[]]$ComputerName,
+
+        [Parameter(Mandatory = $true,
+            ValueFromPipelineByPropertyName = $true)]
         [string]$NewPassword,
+
+        [Parameter(ValueFromPipelineByPropertyName = $true)]
         [string]$NewUser,
+
         [string]$ErrorLogFilePath
     )
 
-    if ($PSBoundParameters.ContainsKey('NewUser')) {
-        $Arguments = @{
-            StartName = $NewUser
-            StartPassword = $NewPassword
-        }
-    } else {
-        $Arguments = @{
-            StartPassword = $NewPassword
-        }
+    BEGIN {
     }
 
-    foreach ($Computer in $ComputerName) {
-        $SessionOption = New-CimSessionOption -Protocol Wsman
-        $Session = New-CimSession -SessionOption $SessionOption -ComputerName $Computer
-
-        $Method = @{
-            Query = "SELECT * FROM Win32_Service WHERE name = '$ServiceName'"
-            MethodName = 'Change'
-            Arguments = $Arguments
-            ComputerName = $Computer
-        }
-
-        Invoke-CimMethod @Method | ForEach-Object {
-            [PSCustomObject]@{
-                ComputerName = $Computer
-                Result = $_.ReturnValue
+    PROCESS {
+        if ($PSBoundParameters.ContainsKey('NewUser')) {
+            $Arguments = @{
+                StartName = $NewUser
+                StartPassword = $NewPassword
+            }
+        } else {
+            $Arguments = @{
+                StartPassword = $NewPassword
             }
         }
 
-        $Session | Remove-CimSession
-    } 
+        foreach ($Computer in $ComputerName) {
+            $SessionOption = New-CimSessionOption -Protocol Wsman
+            $Session = New-CimSession -SessionOption $SessionOption -ComputerName $Computer
+
+            $Method = @{
+                Query = "SELECT * FROM Win32_Service WHERE name = '$ServiceName'"
+                MethodName = 'Change'
+                Arguments = $Arguments
+                ComputerName = $Computer
+            }
+
+            Invoke-CimMethod @Method | ForEach-Object {
+                [PSCustomObject]@{
+                    ComputerName = $Computer
+                    Result = $_.ReturnValue
+                }
+            }
+
+            $Session | Remove-CimSession
+        }
+    }
+
+    END {
+    }
 }
