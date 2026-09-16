@@ -33,12 +33,51 @@ function Get-MachineInfo {
             $Session = New-CimSession -ComputerName $Computer -SessionOption $Option
 
             # Query data
-            $Os = Get-CimInstance -ClassName Win32_OperatingSystem -CimSession $Session
+            $OsParameters = @{
+                Query = 'SELECT * FROM Win32_OperatingSystem'
+                CimSession = $Session
+            }
+            $Os = Get-CimInstance @OsParameters
+
+            $CsParameters = @{
+                Query = 'SELECT * FROM Win32_ComputerSystem'
+                CimSession = $Session
+            }
+            $Cs = Get-CimInstance @CsParameters
+
+            $SysDrive = $Os.SystemDrive # Usually returns C:
+            $DriveParameters = @{
+                Query = "SELECT * FROM Win32_LogicalDisk WHERE DeviceID = '$SysDrive'"
+                CimSession = $Session
+            }
+            $Drive = Get-CimInstance @DriveParameters
+
+            $CpuParameters = @{
+                Query = 'SELECT * FROM Win32_Processor'
+                CimSession = $Session
+            }
+            $Cpu = Get-CimInstance @CpuParameters | Select-Object -First 1 # Select first processor
 
             # Close session
             $Session | Remove-CimSession
 
-            $Os | Select-Object -Property @{Name = 'ComputerName'; Expression = {$Computer}}, Version, ServicePackMajorVersion
+            # Output data
+            $OutputObject = [PSCustomObject]@{
+                ComputerName = $Computer
+                OSVersion = $Os.Version
+                SPVersion = $Os.ServicePackMajorVersion
+                OSBuild = $Os.BuildNumber
+                Manufacturer = $Cs.Manufacturer
+                Model = $Cs.Model
+                CPUs = $Cs.NumberOfProcessors
+                Cores = $Cs.NumberOfLogicalProcessors
+                RAM = ($Cs.TotalPhysicalMemory / 1GB)
+                Architecture = $Cpu.AddressWidth
+                SysDriveFreeSpace = $Drive.Freespace
+            }
+
+            Write-Output $OutputObject
+
         }
     }
 
@@ -89,18 +128,30 @@ function Set-MasterServiceLogon {
             $SessionOption = New-CimSessionOption -Protocol Wsman
             $Session = New-CimSession -SessionOption $SessionOption -ComputerName $Computer
 
-            $Method = @{
+            $MethodProperties = @{
+                CimSession = $Session
                 Query = "SELECT * FROM Win32_Service WHERE name = '$ServiceName'"
                 MethodName = 'Change'
                 Arguments = $Arguments
-                ComputerName = $Computer
             }
 
-            Invoke-CimMethod @Method | ForEach-Object {
-                [PSCustomObject]@{
-                    ComputerName = $Computer
-                    Result = $_.ReturnValue
+            $Method = Invoke-CimMethod @MethodProperties
+
+            switch ($Method.ReturnValue) {
+                0 {
+                    $Status = 'Success'
                 }
+                22 {
+                    $Status = 'Invalid Account'
+                }
+                default {
+                    $Status = "Failed: $($Method.ReturnValue)"
+                }
+            }
+
+            [PSCustomObject]@{
+                ComputerName = $Computer
+                Status = $Status
             }
 
             $Session | Remove-CimSession
