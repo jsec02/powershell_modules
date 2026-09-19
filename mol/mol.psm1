@@ -30,9 +30,11 @@ function Get-MachineInfo {
             $Option = New-CimSessionOption -Protocol $Protocol
 
             # Connect session
+            Write-Verbose "Connecting to $Computer over $Protocol"
             $Session = New-CimSession -ComputerName $Computer -SessionOption $Option
 
             # Query data
+            Write-Verbose "Querying from $Computer"
             $OsParameters = @{
                 Query = 'SELECT * FROM Win32_OperatingSystem'
                 CimSession = $Session
@@ -59,9 +61,11 @@ function Get-MachineInfo {
             $Cpu = Get-CimInstance @CpuParameters | Select-Object -First 1 # Select first processor
 
             # Close session
+            Write-Verbose "Closing session to $Computer"
             $Session | Remove-CimSession
 
             # Output data
+            Write-Verbose "Outputting for $Computer"
             $OutputObject = [PSCustomObject]@{
                 ComputerName = $Computer
                 OSVersion = $Os.Version
@@ -122,10 +126,12 @@ function Set-MasterServiceLogon {
             $Arguments = @{
                 StartPassword = $NewPassword
             }
+            Write-Warning "Not setting a new user name"
         }
 
         foreach ($Computer in $ComputerName) {
             $SessionOption = New-CimSessionOption -Protocol Wsman
+            Write-Verbose "Connecting to $Computer on WS-MAN"
             $Session = New-CimSession -SessionOption $SessionOption -ComputerName $Computer
 
             $MethodProperties = @{
@@ -135,6 +141,7 @@ function Set-MasterServiceLogon {
                 Arguments = $Arguments
             }
 
+            Write-Verbose "Setting $ServiceName on $Computer"
             $Method = Invoke-CimMethod @MethodProperties
 
             switch ($Method.ReturnValue) {
@@ -154,6 +161,7 @@ function Set-MasterServiceLogon {
                 Status = $Status
             }
 
+            Write-Verbose "Closing connection to $Computer"
             $Session | Remove-CimSession
         }
     }
