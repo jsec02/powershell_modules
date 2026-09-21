@@ -62,61 +62,98 @@ function Get-MachineInfo {
     PROCESS {
         foreach ($Computer in $ComputerName) {
             # Establish session protocol
-            $Option = New-CimSessionOption -Protocol $Protocol
+            $SessionOption = New-CimSessionOption -Protocol $Protocol
 
-            # Connect session
-            Write-Verbose "Connecting to $Computer over $Protocol"
-            $Session = New-CimSession -ComputerName $Computer -SessionOption $Option
+            try {
+                # Connect session
+                Write-Verbose "Connecting to $Computer over $Protocol"
+                $CimSessionParameters = @{
+                    ComputerName = $Computer
+                    SessionOption = $SessionOption
+                    ErrorAction = 'Stop'
+                }
+                $Session = New-CimSession @CimSessionParameters
 
-            # Query data
-            Write-Verbose "Querying from $Computer"
-            $OsParameters = @{
-                Query = 'SELECT * FROM Win32_OperatingSystem'
-                CimSession = $Session
+                # Query data
+                Write-Verbose "Querying from $Computer"
+                $OsParameters = @{
+                    Query = 'SELECT * FROM Win32_OperatingSystem'
+                    CimSession = $Session
+                }
+                $Os = Get-CimInstance @OsParameters
+
+                $CsParameters = @{
+                    Query = 'SELECT * FROM Win32_ComputerSystem'
+                    CimSession = $Session
+                }
+                $Cs = Get-CimInstance @CsParameters
+
+                $SysDrive = $Os.SystemDrive # Usually returns C:
+                $DriveParameters = @{
+                    Query = "SELECT * FROM Win32_LogicalDisk WHERE DeviceID = '$SysDrive'"
+                    CimSession = $Session
+                }
+                $Drive = Get-CimInstance @DriveParameters
+
+                $CpuParameters = @{
+                    Query = 'SELECT * FROM Win32_Processor'
+                    CimSession = $Session
+                }
+                $Cpu = Get-CimInstance @CpuParameters | Select-Object -First 1 # Select first processor
+
+                # Close session
+                Write-Verbose "Closing session to $Computer"
+                $Session | Remove-CimSession
+
+                # Output data
+                Write-Verbose "Outputting for $Computer"
+                $OutputObject = [PSCustomObject]@{
+                    ComputerName = $Computer
+                    OSVersion = $Os.Version
+                    SPVersion = $Os.ServicePackMajorVersion
+                    OSBuild = $Os.BuildNumber
+                    Manufacturer = $Cs.Manufacturer
+                    Model = $Cs.Model
+                    CPUs = $Cs.NumberOfProcessors
+                    Cores = $Cs.NumberOfLogicalProcessors
+                    RAM = ($Cs.TotalPhysicalMemory / 1GB)
+                    Architecture = $Cpu.AddressWidth
+                    SysDriveFreeSpace = $Drive.Freespace
+                }
+
+                Write-Output $OutputObject
+            } catch {
+                Write-Warning "FAILED $Computer on $Protocol"
+                # Did we specify protocol fallback? If so, try again. If we specified
+                # logging, we won't log a problem here - we'll let the logging occur
+                # if this fallback also fails
+                if ($ProtocolFallback) {
+                    if ($Protocol -eq 'Dcom') {
+                        $NewProtocol = 'Wsman'
+                    } else {
+                        $NewProtocol = 'Dcom'
+                    }
+
+                    Write-Verbose "Trying again with $NewProtocol"
+                    $MachineInfoParameters = @{
+                        ComputerName = $Computer
+                        Protocol = $NewProtocol
+                        ProtocolFallback = $false
+                    }
+                    if ($PSBoundParameters.ContainsKey('LogFailuresToPath')) {
+                        $MachineInfoParameters += @{
+                            LogFailuresToPath = $LogFailuresToPath
+                        }
+                    }
+                    Get-MachineInfo $MachineInfoParameters
+                }
+                # If we didn't specify fallback, but we did specify logging, then log the error,
+                # because we won't be trying again
+                if (-not $ProtocolFallback -and $PSBoundParameters.ContainsKey('LogFailuresToPath')) {
+                    Write-Verbose "Logging to $LogFailuresToPath"
+                    $Computer | Out-File $LogFailuresToPath -Append
+                }
             }
-            $Os = Get-CimInstance @OsParameters
-
-            $CsParameters = @{
-                Query = 'SELECT * FROM Win32_ComputerSystem'
-                CimSession = $Session
-            }
-            $Cs = Get-CimInstance @CsParameters
-
-            $SysDrive = $Os.SystemDrive # Usually returns C:
-            $DriveParameters = @{
-                Query = "SELECT * FROM Win32_LogicalDisk WHERE DeviceID = '$SysDrive'"
-                CimSession = $Session
-            }
-            $Drive = Get-CimInstance @DriveParameters
-
-            $CpuParameters = @{
-                Query = 'SELECT * FROM Win32_Processor'
-                CimSession = $Session
-            }
-            $Cpu = Get-CimInstance @CpuParameters | Select-Object -First 1 # Select first processor
-
-            # Close session
-            Write-Verbose "Closing session to $Computer"
-            $Session | Remove-CimSession
-
-            # Output data
-            Write-Verbose "Outputting for $Computer"
-            $OutputObject = [PSCustomObject]@{
-                ComputerName = $Computer
-                OSVersion = $Os.Version
-                SPVersion = $Os.ServicePackMajorVersion
-                OSBuild = $Os.BuildNumber
-                Manufacturer = $Cs.Manufacturer
-                Model = $Cs.Model
-                CPUs = $Cs.NumberOfProcessors
-                Cores = $Cs.NumberOfLogicalProcessors
-                RAM = ($Cs.TotalPhysicalMemory / 1GB)
-                Architecture = $Cpu.AddressWidth
-                SysDriveFreeSpace = $Drive.Freespace
-            }
-
-            Write-Output $OutputObject
-
         }
     }
 
@@ -191,43 +228,58 @@ function Set-MasterServiceLogon {
             $Arguments = @{
                 StartPassword = $NewPassword
             }
-            Write-Warning "Not setting a new user name"
+            Write-Warning "Not setting a new username"
         }
 
         foreach ($Computer in $ComputerName) {
+            # Establish session protocol
             $SessionOption = New-CimSessionOption -Protocol Wsman
-            Write-Verbose "Connecting to $Computer on WS-MAN"
-            $Session = New-CimSession -SessionOption $SessionOption -ComputerName $Computer
 
-            $MethodProperties = @{
-                CimSession = $Session
-                Query = "SELECT * FROM Win32_Service WHERE name = '$ServiceName'"
-                MethodName = 'Change'
-                Arguments = $Arguments
-            }
-
-            Write-Verbose "Setting $ServiceName on $Computer"
-            $Method = Invoke-CimMethod @MethodProperties
-
-            switch ($Method.ReturnValue) {
-                0 {
-                    $Status = 'Success'
+            try {
+                Write-Verbose "Connecting to $Computer on WS-MAN"
+                $CimSessionParameters = @{
+                    SessionnOption = $SessionOption
+                    ComputerName = $Computer
+                    ErrorAction = 'Stop'
                 }
-                22 {
-                    $Status = 'Invalid Account'
+                $Session = New-CimSession @CimSessionParameters
+
+                $MethodProperties = @{
+                    CimSession = $Session
+                    Query = "SELECT * FROM Win32_Service WHERE name = '$ServiceName'"
+                    MethodName = 'Change'
+                    Arguments = $Arguments
                 }
-                default {
-                    $Status = "Failed: $($Method.ReturnValue)"
+
+                Write-Verbose "Setting $ServiceName on $Computer"
+                $Method = Invoke-CimMethod @MethodProperties
+
+                switch ($Method.ReturnValue) {
+                    0 {
+                        $Status = 'Success'
+                    }
+                    22 {
+                        $Status = 'Invalid Account'
+                    }
+                    default {
+                        $Status = "Failed: $($Method.ReturnValue)"
+                    }
+                }
+
+                [PSCustomObject]@{
+                    ComputerName = $Computer
+                    Status = $Status
+                }
+
+                Write-Verbose "Closing connection to $Computer"
+                $Session | Remove-CimSession
+            } catch {
+                Write-Warning "FAILED $Computer on $Protocol"
+                if ($PSBoundParameters.ContainsKey('LogFailuresToPath')) {
+                    Write-Verbose "Logging to $LogFailuresToPath"
+                    $Computer | Out-File $LogFailuresToPath -Append
                 }
             }
-
-            [PSCustomObject]@{
-                ComputerName = $Computer
-                Status = $Status
-            }
-
-            Write-Verbose "Closing connection to $Computer"
-            $Session | Remove-CimSession
         }
     }
 
