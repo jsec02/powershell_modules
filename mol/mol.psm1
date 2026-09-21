@@ -212,7 +212,7 @@ function Set-MasterServiceLogon {
         [Parameter(ValueFromPipelineByPropertyName = $true)]
         [string]$NewUser,
 
-        [string]$ErrorLogFilePath
+        [string]$LogFailuresToPath
     )
 
     BEGIN {
@@ -231,55 +231,63 @@ function Set-MasterServiceLogon {
             Write-Warning "Not setting a new username"
         }
 
+        $Protocols = 'WSMAN', 'DCOM'
+
         foreach ($Computer in $ComputerName) {
-            # Establish session protocol
-            $SessionOption = New-CimSessionOption -Protocol Wsman
-
-            try {
-                Write-Verbose "Connecting to $Computer on WS-MAN"
-                $CimSessionParameters = @{
-                    SessionnOption = $SessionOption
-                    ComputerName = $Computer
-                    ErrorAction = 'Stop'
-                }
-                $Session = New-CimSession @CimSessionParameters
-
-                $MethodProperties = @{
-                    CimSession = $Session
-                    Query = "SELECT * FROM Win32_Service WHERE name = '$ServiceName'"
-                    MethodName = 'Change'
-                    Arguments = $Arguments
-                }
-
-                Write-Verbose "Setting $ServiceName on $Computer"
-                $Method = Invoke-CimMethod @MethodProperties
-
-                switch ($Method.ReturnValue) {
-                    0 {
-                        $Status = 'Success'
+            foreach ($Protocol in $Protocols) {
+                try {
+                    $SessionOption = New-CimSessionOption -Protocol $Protocol
+                    Write-Verbose "Connecting to $Computer on $Protocol"
+                    $CimSessionParameters = @{
+                        SessionOption = $SessionOption
+                        ComputerName = $Computer
+                        ErrorAction = 'Stop'
                     }
-                    22 {
-                        $Status = 'Invalid Account'
-                    }
-                    default {
-                        $Status = "Failed: $($Method.ReturnValue)"
-                    }
-                }
+                    $Session = New-CimSession @CimSessionParameters
+                    break
+                } catch {
+                    Write-Warning "FAILED $Computer on $Protocol"
 
-                [PSCustomObject]@{
-                    ComputerName = $Computer
-                    Status = $Status
-                }
-
-                Write-Verbose "Closing connection to $Computer"
-                $Session | Remove-CimSession
-            } catch {
-                Write-Warning "FAILED $Computer on $Protocol"
-                if ($PSBoundParameters.ContainsKey('LogFailuresToPath')) {
-                    Write-Verbose "Logging to $LogFailuresToPath"
-                    $Computer | Out-File $LogFailuresToPath -Append
+                    if ($Protocol -eq $Protocols[-1] -and $PSBoundParameters.ContainsKey('LogFailuresToPath')) {
+                        Write-Verbose "Logging to $LogFailuresToPath"
+                        $Computer | Out-File $LogFailuresToPath -Append
+                    }
                 }
             }
+
+            if (-not $Session) {
+                continue
+            }
+
+            $MethodProperties = @{
+                CimSession = $Session
+                Query = "SELECT * FROM Win32_Service WHERE name = '$ServiceName'"
+                MethodName = 'Change'
+                Arguments = $Arguments
+            }
+
+            Write-Verbose "Setting $ServiceName on $Computer"
+            $Method = Invoke-CimMethod @MethodProperties
+
+            switch ($Method.ReturnValue) {
+                0 {
+                    $Status = 'Success'
+                }
+                22 {
+                    $Status = 'Invalid Account'
+                }
+                default {
+                    $Status = "Failed: $($Method.ReturnValue)"
+                }
+            }
+
+            [PSCustomObject]@{
+                ComputerName = $Computer
+                Status = $Status
+            }
+
+            Write-Verbose "Closing connection to $Computer"
+            $Session | Remove-CimSession
         }
     }
 
