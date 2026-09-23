@@ -294,3 +294,5 @@ function Set-MasterServiceLogon {
     END {
     }
 }
+
+Export-ModuleMember -Function Get-MachineInfo, Set-MasterServiceLogon

@@ -10,10 +10,10 @@ PowerShell modules for reusable and importable commands
 -------------------------------------------------------------------------------
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-PowerShell                       3            104             84            328
+PowerShell                       4            148            155            349
 Markdown                         1              8              4             25
 -------------------------------------------------------------------------------
-SUM:                             4            112             88            353
+SUM:                             5            156            159            374
 -------------------------------------------------------------------------------
 ```
 <!-- CODE_STATISTICS_END -->
@@ -25,6 +25,7 @@ SUM:                             4            112             88            353
 ```
 powershell_modules
 ├── mol
+│   ├── mol.psd1
 │   └── mol.psm1
 ├── README.md
 ├── tools
@@ -32,6 +33,6 @@ powershell_modules
 └── watch
     └── watch.psm1
 
-4 directories, 4 files
+4 directories, 5 files
 ```
 <!-- PROJECT_STRUCTURE_END -->
