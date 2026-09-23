@@ -56,4 +56,6 @@ function Watch-Command {
 
 }
 
-Export-ModuleMember -Function Watch-Command
+Set-Alias -Name watch -Value Watch-Command
+
+Export-ModuleMember -Function Watch-Command -Alias watch
