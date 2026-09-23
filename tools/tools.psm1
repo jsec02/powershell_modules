@@ -172,7 +172,7 @@ function Remove-FirewallInboundPort {
     Remove-NetFirewallRule -DisplayName "Allow inbound Port $Port" -ErrorAction SilentlyContinue
 }
 
-ModuleMemberParameters = @{
+$ModuleMemberParameters = @{
     Function = @(
         # Help
         'Get-CommandParameters'
