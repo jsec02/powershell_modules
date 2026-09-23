@@ -4,7 +4,7 @@
 
 # ===================================== HELP =====================================
 
-function Get-CommandParams {
+function Get-CommandParameters {
     [CmdletBinding()]
     param([string]$Command)
 
@@ -18,6 +18,9 @@ function Get-CommandExamples {
     Get-Help -Name $Command -Example
 }
 
+Set-Alias -Name gcp -Value Get-CommandParameters
+Set-Alias -Name gce -Value Get-CommandExamples
+
 # ==================================== WINGET ====================================
 
 function Update-Packages {
@@ -26,6 +29,8 @@ function Update-Packages {
 
     Get-WinGetPackage | Where-Object -Property IsUpdateAvailable | Update-WinGetPackage -Mode Silent
 }
+
+Set-Alias -Name up -Value Update-Packages
 
 # ===================================== GIT ======================================
 
@@ -36,6 +41,9 @@ function Get-GitStatus {
 function Update-GitMaster {
     git pull origin master
 }
+
+Set-Alias -Name gs -Value Get-GitStatus
+Set-Alias -Name gpom -Value Update-GitMaster
 
 # ================================== PROCESSES ===================================
 
@@ -62,6 +70,8 @@ function Get-SortedGroupedProcesses {
     Get-GroupedProcesses | Sort-Object -Property $SortBy -Descending
 }
 
+Set-Alias -Name ps -Value Get-SortedGroupedProcesses
+
 # ===================================== CIM ======================================
 
 function Get-CimChildNamespace {
@@ -70,6 +80,8 @@ function Get-CimChildNamespace {
 
     Get-CimInstance -Namespace $Namespace -Query 'SELECT * FROM __NAMESPACE' | Select-Object -Property Name
 }
+
+Set-Alias -Name gccn -Value Get-CimChildNamespace
 
 # =================================== DRIVERS ====================================
 
@@ -159,3 +171,65 @@ function Remove-FirewallInboundPort {
     param([Parameter(Mandatory)][int]$Port)
     Remove-NetFirewallRule -DisplayName "Allow inbound Port $Port" -ErrorAction SilentlyContinue
 }
+
+ModuleMemberParameters = @{
+    Function = @(
+        # Help
+        'Get-CommandParameters'
+        'Get-CommandExamples'
+
+        # winget
+        'Update-Packages'
+
+        # git
+        'Get-GitStatus'
+        'Update-GitMaster'
+
+        # Processes
+        'Get-GroupedProcesses'
+        'Get-SortedGroupedProcesses'
+
+        # CIM
+        'Get-CimChildNamespace'
+
+        # Drivers
+        'Get-Driver'
+
+        # Drives
+        'Get-LocalDrive'
+
+        # CPU
+        'Get-CPU'
+
+        #GPU
+        'Get-GPU'
+
+        # Firewall
+        'Enable-Firewall'
+        'Disable-Firewall'
+        'New-FirewallInboundPort'
+        'Remove-FirewallInboundPort'
+    )
+
+    Alias = @(
+        # Help
+        'gcp'
+        'gce'
+
+        # winget
+        'up'
+
+        # git
+        'gs'
+        'gpom'
+
+        # Processes
+        'ps'
+
+        # CIM
+        'gccn'
+    )
+
+}
+
+Export-ModuleMember @ModuleMemberParameters
