@@ -56,10 +56,10 @@ function Get-MachineInfo {
         [switch]$ProtocolFallback
     )
 
-    BEGIN {
+    begin {
     }
 
-    PROCESS {
+    process {
         foreach ($Computer in $ComputerName) {
             # Establish session protocol
             $SessionOption = New-CimSessionOption -Protocol $Protocol
@@ -157,7 +157,7 @@ function Get-MachineInfo {
         }
     }
 
-    END {
+    end {
     }
 }
 
@@ -215,10 +215,10 @@ function Set-MasterServiceLogon {
         [string]$LogFailuresToPath
     )
 
-    BEGIN {
+    begin {
     }
 
-    PROCESS {
+    process {
         if ($PSBoundParameters.ContainsKey('NewUser')) {
             $Arguments = @{
                 StartName = $NewUser
@@ -291,7 +291,7 @@ function Set-MasterServiceLogon {
         }
     }
 
-    END {
+    end {
     }
 }
 
