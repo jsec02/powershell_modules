@@ -6,14 +6,18 @@
 
 function Get-CommandParameters {
     [CmdletBinding()]
-    param([string]$Command)
+    param(
+        [string]$Command
+    )
 
     Get-Help -Name $Command -Parameter *
 }
 
 function Get-CommandExamples {
     [CmdletBinding()]
-    param([string]$Command)
+    param(
+        [string]$Command
+    )
 
     Get-Help -Name $Command -Example
 }
@@ -65,7 +69,9 @@ function Get-GroupedProcesses {
 
 function Get-SortedGroupedProcesses {
     [CmdletBinding()]
-    param([string]$SortBy = 'WS(M)')
+    param(
+        [string]$SortBy = 'WS(M)'
+    )
 
     Get-GroupedProcesses | Sort-Object -Property $SortBy -Descending
 }
@@ -76,7 +82,9 @@ Set-Alias -Name ps -Value Get-SortedGroupedProcesses
 
 function Get-CimChildNamespace {
     [CmdletBinding()]
-    param([string]$Namespace = 'root')
+    param(
+        [string]$Namespace = 'root'
+    )
 
     Get-CimInstance -Namespace $Namespace -Query 'SELECT * FROM __NAMESPACE' | Select-Object -Property Name
 }
@@ -162,14 +170,75 @@ function Disable-Firewall {
 
 function New-FirewallInboundPort {
     [CmdletBinding()]
-    param([Parameter(Mandatory)][int]$Port)
+    param(
+        [Parameter(Mandatory)]
+        [int]$Port
+    )
+
     New-NetFirewallRule -DisplayName "Allow inbound Port $Port" -Direction Inbound -LocalPort $Port -Protocol TCP -Action Allow
 }
 
 function Remove-FirewallInboundPort {
     [CmdletBinding()]
-    param([Parameter(Mandatory)][int]$Port)
+    param(
+        [Parameter(Mandatory)]
+        [int]$Port
+    )
+
     Remove-NetFirewallRule -DisplayName "Allow inbound Port $Port" -ErrorAction SilentlyContinue
+}
+
+# =================================== MEASURE ====================================
+
+function Get-DirectorySize {
+    [CmdletBinding()]
+    param(
+        [Parameter(
+            Mandatory = $true,
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $true
+        )]
+        [string[]]$Path
+    )
+
+    begin {
+    }
+
+    process {
+        foreach ($Directory in $Path) {
+            Write-Verbose "Checking $Directory"
+
+            $FileCount = 0
+            $ByteCount = 0
+
+            if (Test-Path -Path $Directory) {
+                Write-Verbose " + Path exists"
+
+                $GciParameters = @{
+                    Path    = $Directory
+                    Recurse = $true
+                    File    = $true
+                }
+
+                $MeasureObject = Get-ChildItem @GciParameters | Measure-Object -Property Length -Sum
+
+                $FileCount = $MeasureObject.Count
+                $ByteCount = $MeasureObject.Sum
+
+            } else {
+                Write-Verbose " - Path does not exist"
+            }
+
+            [PSCustomObject]@{
+                Path  = $Directory
+                Files = $FileCount
+                Bytes = $ByteCount
+            }
+        }
+    }
+
+    end {
+    }
 }
 
 $ModuleMemberParameters = @{
@@ -209,6 +278,9 @@ $ModuleMemberParameters = @{
         'Disable-Firewall'
         'New-FirewallInboundPort'
         'Remove-FirewallInboundPort'
+
+        # Measure
+        'Get-DirectorySize'
     )
 
     Alias = @(
