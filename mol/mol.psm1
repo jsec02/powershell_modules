@@ -42,9 +42,11 @@ function Get-MachineInfo {
 
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true,
+        [Parameter(
+            Mandatory = $true,
             ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true)]
+            ValueFromPipelineByPropertyName = $true
+        )]
         [Alias('CN', 'MachineName', 'Name')]
         [string[]]$ComputerName,
 
@@ -196,17 +198,23 @@ function Set-MasterServiceLogon {
 
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true,
-            ValueFromPipelineByPropertyName = $true)]
+        [Parameter(
+            Mandatory = $true,
+            ValueFromPipelineByPropertyName = $true
+        )]
         [string]$ServiceName,
 
-        [Parameter(Mandatory = $true,
+        [Parameter(
+            Mandatory = $true,
             ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true)]
+            ValueFromPipelineByPropertyName = $true
+        )]
         [string[]]$ComputerName,
 
-        [Parameter(Mandatory = $true,
-            ValueFromPipelineByPropertyName = $true)]
+        [Parameter(
+            Mandatory = $true,
+            ValueFromPipelineByPropertyName = $true
+        )]
         [string]$NewPassword,
 
         [Parameter(ValueFromPipelineByPropertyName = $true)]
