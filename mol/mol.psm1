@@ -242,6 +242,9 @@ function Set-MasterServiceLogon {
         $Protocols = 'WSMAN', 'DCOM'
 
         foreach ($Computer in $ComputerName) {
+
+            $Session = $null
+
             foreach ($Protocol in $Protocols) {
                 try {
                     $SessionOption = New-CimSessionOption -Protocol $Protocol
