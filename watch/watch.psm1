@@ -2,6 +2,8 @@
 # =                                    WATCH                                     =
 # ================================================================================
 
+Set-StrictMode -Version Latest
+
 function Build-InfoBar {
     param(
         [Parameter(Mandatory=$true)]
