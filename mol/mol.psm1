@@ -4,6 +4,8 @@
 
 # =============================== GET-MACHINEINFO ================================
 
+Set-StrictMode -Version Latest
+
 function Get-MachineInfo {
     <#
     .SYNOPSIS
