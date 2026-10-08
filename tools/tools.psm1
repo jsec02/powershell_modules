@@ -243,6 +243,15 @@ function Get-DirectorySize {
     }
 }
 
+# ================================== VARIABLES ===================================
+
+function Get-ScopedVariable {
+    # Useful in the command line debugger
+    Get-Variable | Where-Object {$_.Name -notin (Get-Variable -Scope Global).Name}
+}
+
+# ==================================== EXPORT ====================================
+
 $ModuleMemberParameters = @{
     Function = @(
         # Help
@@ -283,6 +292,9 @@ $ModuleMemberParameters = @{
 
         # Measure
         'Get-DirectorySize'
+
+        # Variables
+        'Get-ScopedVariable'
     )
 
     Alias = @(
