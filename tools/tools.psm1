@@ -247,7 +247,8 @@ function Get-DirectorySize {
 
 function Get-ScopedVariable {
     # Useful in the command line debugger
-    Get-Variable | Where-Object {$_.Name -notin (Get-Variable -Scope Global).Name}
+    # Use -Scope 1 to specify one level up since Get-Variable is wrapped here
+    Get-Variable -Scope 1 | Where-Object {$_.Name -notin (Get-Variable -Scope Global).Name}
 }
 
 # ==================================== EXPORT ====================================
