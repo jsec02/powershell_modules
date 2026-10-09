@@ -9,7 +9,10 @@ function Invoke-Speech {
             Mandatory=$true,
             ValueFromPipeline=$true
         )]
-        [string[]]$Text
+        [string[]]$Text,
+
+        [Alias('Async')]
+        [switch]$Asynchronous
     )
 
     begin {
@@ -19,7 +22,11 @@ function Invoke-Speech {
 
     process {
         foreach ($Phrase in $Text) {
-            $SpeechSynthesizer.Speak($Phrase)
+            if ($Asynchronous) {
+                $null = $SpeechSynthesizer.SpeakAsync($Phrase)
+            } else {
+                $SpeechSynthesizer.Speak($Phrase)
+            }
         }
     }
 
