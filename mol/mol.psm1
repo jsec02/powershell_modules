@@ -308,4 +308,14 @@ function Set-MasterServiceLogon {
     }
 }
 
-Export-ModuleMember -Function Get-MachineInfo, Set-MasterServiceLogon
+# ==================================== EXPORT ====================================
+
+
+$ModuleMemberParameters = @{
+    Function = @(
+        'Get-MachineInfo'
+        'Set-MasterServiceLogon'
+    )
+}
+
+Export-ModuleMember @ModuleMemberParameters
