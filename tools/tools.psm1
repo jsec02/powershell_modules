@@ -243,6 +243,33 @@ function Get-DirectorySize {
     }
 }
 
+# =================================== PROGRAMS ===================================
+
+function Get-InstalledPrograms {
+    [CmdletBinding()]
+    param(
+        [ValidateSet('All', 'User', 'System')]
+        [string]$Scope = 'All',
+
+        [string]$Name = '*'
+    )
+
+    $Paths = @()
+
+    if ($Scope -in 'All', 'User') {
+        $Paths += 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*'
+    }
+
+    if ($Scope -in 'All', 'System') {
+        $Paths += 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*'
+        $Paths += 'HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*'
+    }
+
+    Get-ItemProperty -Path $Paths -ErrorAction SilentlyContinue |
+        Where-Object {$_.DisplayName -and $_.DisplayName -like $Name} |
+        Select-Object DisplayName, DisplayVersion, Publisher, UninstallString, PSChildName
+}
+
 # ==================================== EXPORT ====================================
 
 $ModuleMemberParameters = @{
@@ -285,6 +312,9 @@ $ModuleMemberParameters = @{
 
         # Measure
         'Get-DirectorySize'
+
+        # Programs
+        'Get-InstalledPrograms'
     )
 
     Alias = @(
