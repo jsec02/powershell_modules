@@ -266,7 +266,10 @@ function Get-InstalledPrograms {
     }
 
     Get-ItemProperty -Path $Paths -ErrorAction SilentlyContinue |
-        Where-Object {$_.DisplayName -and $_.DisplayName -like $Name} |
+        Where-Object {
+            $_.PSObject.Properties['DisplayName'] -and # Needed to not throw error with Set-StrictMode
+            $_.DisplayName -like $Name
+        } |
         Select-Object DisplayName, DisplayVersion, Publisher, UninstallString, PSChildName
 }
 
